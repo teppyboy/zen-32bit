@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
+# Fuck Zen building script for being super verbose.
+set +x
 echo "This script will cross-compile Zen Browser for Windows 32-bit on Ubuntu."
+
+echo "Cloning Zen Browser repository..."
+mkdir zen-browser/
+git clone https://github.com/zen-browser/desktop/ zen-browser/desktop --recursive --depth 1
+cd zen-browser/desktop/
 
 echo "Installing dependencies..."
 # Copied from Zen
@@ -12,10 +19,10 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 rustup target add i686-pc-windows-msvc
 curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-cargo binstall cargo-download --locked
-cargo binstall cbindgen --locked
-cargo binstall sccache --locked
-cargo binstall cargo-download --locked
+cargo binstall -y cargo-download --locked
+cargo binstall -y cbindgen --locked
+cargo binstall -y sccache --locked
+cargo binstall -y cargo-download --locked
 cargo download -x windows=0.58.0
 export CARGO_INCREMENTAL=0
 
@@ -32,7 +39,7 @@ sudo mv libclang_rt.builtins-wasm32.a /usr/lib/llvm-18/lib/clang/18/lib/wasi/
 echo "Setting up Windows dependencies..."
 mkdir -p ~/win-cross
 cd engine/
-sudo add-apt-repository ppa:savoury1/backports
+sudo add-apt-repository -y ppa:savoury1/backports
 sudo apt update
 sudo apt install -y python3-pip autoconf autoconf2.13 automake bison build-essential cabextract curl cmake flex gawk gcc-multilib git gnupg jq libbz2-dev libexpat1-dev libffi-dev libncursesw5-dev libsqlite3-dev libssl-dev libtool libucl-dev libxml2-dev msitools ninja-build openssh-client p7zip-full pkg-config procps python3-requests python3-toml scons subversion tar unzip uuid uuid-dev wget zip zlib1g-dev aria2
 echo "Seting up Mozilla Wine..."
@@ -41,14 +48,12 @@ tar --zstd -xf wine.tar.zst -C ~/win-cross
 rm wine.tar.zst
 echo "Setting up MSVC..."
 ./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2022.yaml ~/win-cross/vs2022
+cd ..
 
 echo "Building Zen Browser..."
 export SURFER_PLATFORM="win32"
 export ZEN_CROSS_COMPILING=1
 export ZEN_RELEASE=1
-mkdir zen-browser/
-git clone https://github.com/zen-browser/desktop/ zen-browser/desktop --recursive --depth 1
-cd zen-browser/desktop/
 git submodule update --init --recursive
 npm install
 npm run init
