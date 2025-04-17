@@ -1,0 +1,52 @@
+
+if test "$ZEN_CROSS_COMPILING"; then
+
+  export WINSYSROOT="$(echo ~)/win-cross/vs2022"
+
+  export WINE="$(echo ~)/win-cross/wine/bin/wine64"
+  export WINEARCH=win32
+  export WINEDEBUG=-all
+
+  export MOZ_STUB_INSTALLER=1
+  export MOZ_PKG_FORMAT=TAR
+
+  export CROSS_BUILD=1
+  CROSS_COMPILE=1
+
+  export WIN32_REDIST_DIR="$(echo ~)/win-cross/vs2022/VC/Redist/MSVC/14.38.33135/x86/Microsoft.VC143.CRT"
+fi
+
+#? https://bugzilla.mozilla.org/show_bug.cgi?id=1617793
+#? https://phabricator.services.mozilla.com/D170170
+ac_add_options --disable-maintenance-service
+ac_add_options --disable-bits-download
+
+ac_add_options --target=i686-pc-windows-msvc
+ac_add_options --enable-eme=widevine,wmfcdm
+
+# ac_add_options --disable-jemalloc
+
+ac_add_options --enable-optimize="-fwasm-exceptions -m32 -O3 -w -ftree-vectorize -mfpmath=sse -mprfchw -msse3 -mcx16 -msahf"
+
+export LDFLAGS="-Wl,-O3"
+export RUSTFLAGS="-Clink-args=--icf=safe"
+
+#export POLLY="-mllvm -polly -mllvm -polly-2nd-level-tiling -mllvm -polly-loopfusion-greedy -mllvm -polly-pattern-matching-based-opts -mllvm -polly-position=before-vectorizer -mllvm -polly-vectorizer=stripmine"
+export VERBOSE=1
+
+if test "$ZEN_CROSS_COMPILING"; then
+  if test "$ZEN_GA_GENERATE_PROFILE"; then
+    export CXXFLAGS="$CXXFLAGS -fprofile-generate -mllvm -enable-name-compression=false -mllvm -pgo-temporal-instrumentation -fprofile-update=atomic"
+    mk_add_options "export MOZ_AUTOMATION_PACKAGE_GENERATED_SOURCES=0"
+    ac_add_options --enable-profile-generate=cross
+  elif test "$SURFER_COMPAT" = "x86_64"; then
+    # Dont use PGO on aarch64 builds and the ZEN_GA_DISABLE_PGO flag is not set
+    if test "$ZEN_GA_DISABLE_PGO"; then
+      export ZEN_DUMMY=1
+    else
+      ac_add_options --enable-profile-use=cross
+      ac_add_options --with-pgo-profile-path=$(echo ~)/artifact/merged.profdata
+      ac_add_options --with-pgo-jarlog=$(echo ~)/artifact/en-US.log
+    fi
+  fi
+fi
