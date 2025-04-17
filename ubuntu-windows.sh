@@ -21,9 +21,15 @@ sudo apt install -y xvfb libnvidia-egl-wayland1 mesa-utils libgl1-mesa-dri
 sudo apt install -y lld aria2c libc++-dev-wasm32
 
 echo "Cloning Zen Browser repository..."
-mkdir zen-browser/
-git clone https://github.com/zen-browser/desktop/ zen-browser/desktop --recursive --depth 1
-cd zen-browser/desktop/
+if [ -d "zen-browser" ]; then
+    echo "Zen Browser repository already exists, updating..."
+    cd zen-browser/desktop/
+    git pull
+else
+    mkdir zen-browser/
+    git clone https://github.com/zen-browser/desktop/ zen-browser/desktop --recursive --depth 1
+    cd zen-browser/desktop/
+fi
 mkdir engine/
 
 echo "Installing NodeJS..."
@@ -54,6 +60,7 @@ sudo apt update
 sudo apt install -y wine64 wine32 libasound2-plugins:i386 libsdl2-2.0-0:i386 libdbus-1-3:i386 libsqlite3-0:i386
 sudo apt install -y g++-mingw-w64-i686 gcc-mingw-w64-i686 clang llvm clang-tools
 export PATH="/usr/lib/llvm-18/bin/:$PATH"
+# This is dumb af but it works (for now)
 echo "Fixing libclang_rt.builtins-wasm32.a..."
 wget https://github.com/jedisct1/libclang_rt.builtins-wasm32.a/raw/refs/heads/master/precompiled/llvm-18/libclang_rt.builtins-wasm32.a
 sudo mkdir -p /usr/lib/llvm-18/lib/clang/18/lib/wasi/
