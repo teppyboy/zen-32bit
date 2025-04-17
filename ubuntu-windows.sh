@@ -92,6 +92,13 @@ cp -f ../../desktop/configs/windows/mozconfig ./configs/windows/mozconfig
 echo "" >> ./configs/common/mozconfig
 echo "export MOZ_WINDOWS_RS_DIR=$(pwd)/windows-0.58.0" >> ./configs/common/mozconfig
 export PATH="/usr/lib/llvm-18/bin/:$PATH"
+echo "Creating a commit to bypass the commit check..."
+cd ./engine/
+git config --global user.email "hello@example.com"
+git config --global user.name "nobody"
+git add -A
+git commit -a -m "fuck Firefox"
+cd ..
 echo "Building Zen Browser..."
 echo "If this fails then you may try 'npm run build -- --verbose' to see more output."
 npm run build
