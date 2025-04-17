@@ -4,27 +4,43 @@
 set +x
 echo "This script will cross-compile Zen Browser for Windows 32-bit on Ubuntu."
 
-echo "Cloning Zen Browser repository..."
-mkdir zen-browser/
-git clone https://github.com/zen-browser/desktop/ zen-browser/desktop --recursive --depth 1
-cd zen-browser/desktop/
-
 echo "Installing dependencies..."
 # Copied from Zen
 sudo apt install -y python3 python3-pip dos2unix yasm nasm build-essential libgtk2.0-dev libpython3-dev m4 uuid libasound2-dev libcurl4-openssl-dev libdbus-1-dev libdrm-dev libdbus-glib-1-dev libgtk-3-dev libpulse-dev libx11-xcb-dev libxt-dev xvfb lld llvm --fix-missing
-sudo apt install -y lld
+# From Zen (.github/workflows/src/release-build.sh)
+sudo add-apt-repository -y ppa:kisak/kisak-mesa
+sudo apt update
+sudo apt install -y xvfb libnvidia-egl-wayland1 mesa-utils libgl1-mesa-dri
+# From myself
+sudo apt install -y lld aria2c
 
 echo "Installing Rust and Rust applications..."
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source $HOME/.cargo/env
 rustup target add i686-pc-windows-msvc
-curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash 
 cargo binstall -y cargo-download --locked
 cargo binstall -y cbindgen --locked
 cargo binstall -y sccache --locked
 cargo binstall -y cargo-download --locked
 cargo download -x windows=0.58.0
 export CARGO_INCREMENTAL=0
+
+echo "Installing NodeJS..."
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
+\. "$HOME/.nvm/nvm.sh"
+nvm install 23
+node -v
+nvm current
+npm -v
+
+echo "Initiializing Zen Browser repository..."
+mkdir zen-browser/
+git clone https://github.com/zen-browser/desktop/ zen-browser/desktop --recursive --depth 1
+cd zen-browser/desktop/
+npm install
+npm run init
+mkdir engine/
 
 echo "Installing x86 build tools..."
 sudo dpkg --add-architecture i386
@@ -34,6 +50,7 @@ sudo apt install -y g++-mingw-w64-i686 gcc-mingw-w64-i686 clang llvm clang-tools
 export PATH="/usr/lib/llvm-18/bin/:$PATH"
 echo "Fixing libclang_rt.builtins-wasm32.a..."
 wget https://github.com/jedisct1/libclang_rt.builtins-wasm32.a/raw/refs/heads/master/precompiled/llvm-18/libclang_rt.builtins-wasm32.a
+sudo mkdir -p /usr/lib/llvm-18/lib/clang/18/lib/wasi/
 sudo mv libclang_rt.builtins-wasm32.a /usr/lib/llvm-18/lib/clang/18/lib/wasi/
 
 echo "Setting up Windows dependencies..."
@@ -54,9 +71,6 @@ echo "Building Zen Browser..."
 export SURFER_PLATFORM="win32"
 export ZEN_CROSS_COMPILING=1
 export ZEN_RELEASE=1
-git submodule update --init --recursive
-npm install
-npm run init
 python3 ./scripts/update_en_US_packs.py
 # Copying our config
 cp -f ../../desktop/configs/windows/mozconfig ./configs/windows/mozconfig
