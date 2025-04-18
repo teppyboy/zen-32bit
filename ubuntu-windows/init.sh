@@ -67,7 +67,6 @@ echo "Initializing repository..."
 npm install
 npm run bootstrap
 npm run init
-npm run surfer -- ci --brand twilight
 
 echo "Setting up Windows dependencies..."
 mkdir -p ~/win-cross
