@@ -4,7 +4,7 @@
 set +x
 echo "This script will cross-compile Zen Browser for Windows 32-bit on Ubuntu."
 
-source ../ubuntu-windows/env.sh
+source ./ubuntu-windows/env.sh
 
 echo "Installing dependencies..."
 # Copied from Zen

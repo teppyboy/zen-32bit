@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source ../ubuntu-windows/env.sh
+source ./ubuntu-windows/env.sh
 echo "Building Zen Browser..."
 echo "If this fails then you may try 'npm run build -- --verbose' to see more output."
 cd ./zen-browser/desktop
