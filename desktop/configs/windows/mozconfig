@@ -1,4 +1,5 @@
-
+# Additional flags provided by https://github.com/Alex313031/Mercury/blob/main/mozconfigs/mozconfig-win-avx2-cross 
+# Note that they're adjusted for 32-bit platforms
 if test "$ZEN_CROSS_COMPILING"; then
 
   export WINSYSROOT="$(echo ~)/win-cross/vs2022"
@@ -21,17 +22,102 @@ fi
 ac_add_options --disable-maintenance-service
 ac_add_options --disable-bits-download
 
+# Build Zen only
+ac_add_options --enable-application=browser
+ac_add_options --disable-artifact-builds
+
+# 32-bit build
 ac_add_options --target=i686-pc-windows-msvc
 ac_add_options --enable-eme=widevine,wmfcdm
 
-# ac_add_options --disable-jemalloc
+# Optimizations
+# From Mercury browser
+# Optimization settings
+ac_add_options --enable-release
+ac_add_options --disable-debug
+ac_add_options --disable-debug-symbols
+ac_add_options --disable-debug-js-modules
+ac_add_options --disable-tests
+ac_add_options --enable-strip
+ac_add_options --enable-install-strip
+ac_add_options --enable-clang-plugin
+ac_add_options --enable-lto
+ac_add_options --enable-jemalloc
+ac_add_options --enable-wasm-avx
+ac_add_options --enable-rust-simd
+ac_add_options --enable-hardening
+ac_add_options --disable-trace-logging
+mk_add_options MOZILLA_OFFICIAL=1
+MOZILLA_OFFICIAL=1
+export MOZILLA_OFFICIAL=1
+mk_add_options MOZ_OPTIMIZE=1
+MOZ_OPTIMIZE=1
+export MOZ_OPTIMIZE=1
+export STRIP_FLAGS="--strip-debug --strip-unneeded"
+# Ours
+ac_add_options --enable-optimize="/O2 /clang:-O3 -march=x86-64-v3 -fno-exceptions -fwasm-exceptions -m32 -O3 -w -ftree-vectorize -mfpmath=sse -mprfchw -msse3 -mcx16 -msahf"
 
-ac_add_options --enable-optimize="-fno-exceptions -fwasm-exceptions -m32 -O3 -w -ftree-vectorize -mfpmath=sse -mprfchw -msse3 -mcx16 -msahf"
+# Dangerous thing (disable sandbox)
+ac_add_options --disable-sandbox
+ac_add_options --disable-content-sandbox
 
-export LDFLAGS="-Wl,-O3,--import-memory,--no-check-features"
-export RUSTFLAGS="-Clink-args=--icf=safe"
+# Media settings
+ac_add_options --enable-raw
+ac_add_options --enable-webrtc
+ac_add_options --enable-jxl
+ac_add_options --enable-av1
+ac_add_options --enable-eme=widevine
 
-#export POLLY="-mllvm -polly -mllvm -polly-2nd-level-tiling -mllvm -polly-loopfusion-greedy -mllvm -polly-pattern-matching-based-opts -mllvm -polly-position=before-vectorizer -mllvm -polly-vectorizer=stripmine"
+# Add-ons
+ac_add_options --allow-addon-sideload
+ac_add_options --with-unsigned-addon-scopes=app,system
+
+# Client settings
+ac_add_options --disable-parental-controls
+ac_add_options --disable-crashreporter
+ac_add_options --disable-updater
+ac_add_options --enable-geckodriver
+ac_add_options --disable-maintenance-service
+ac_add_options --without-wasm-sandboxed-libraries
+ac_add_options --disable-bits-download
+#ac_add_options --disable-default-browser-agent
+export MOZ_SOURCE_CHANGESET=${changeset}
+mk_add_options MOZ_CRASHREPORTER=0
+mk_add_options MOZ_DATA_REPORTING=0
+mk_add_options MOZ_SERVICES_HEALTHREPORT=0
+mk_add_options MOZ_TELEMETRY_REPORTING=
+export MOZ_CRASHREPORTER=0
+export MOZ_DATA_REPORTING=0
+export MOZ_REQUIRE_SIGNING=
+export MOZ_TELEMETRY_REPORTING=
+export MOZ_PACKAGE_JSSHELL=1
+
+# API Keys
+ac_add_options --with-google-location-service-api-keyfile=@TOPSRCDIR@/ga
+ac_add_options --with-google-safebrowsing-api-keyfile=@TOPSRCDIR@/ga
+
+# Autoclobber
+mk_add_options AUTOCLOBBER=1
+export AUTOCLOBBER=1
+
+# Set -Copt-level=3
+export OPT_LEVEL="3"
+ac_add_options OPT_LEVEL="3"
+export RUSTC_OPT_LEVEL="3"
+ac_add_options RUSTC_OPT_LEVEL="3"
+
+# Enable PGO/LTO
+export MOZ_LTO=1
+ac_add_options MOZ_LTO=1
+#export MOZ_PGO=1
+#ac_add_options MOZ_PGO=1
+
+export CFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
+export CPPFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
+export CXXFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
+export LDFLAGS="-Wl,-O3 -march=core2,--import-memory,--no-check-features"
+export RUSTFLAGS="-Clink-args=--icf=safe -C target-cpu=core2 -C codegen-units=1"
+export POLLY="-mllvm -polly -mllvm -polly-2nd-level-tiling -mllvm -polly-loopfusion-greedy -mllvm -polly-pattern-matching-based-opts -mllvm -polly-position=before-vectorizer -mllvm -polly-vectorizer=stripmine"
 export VERBOSE=1
 
 if test "$ZEN_CROSS_COMPILING"; then
