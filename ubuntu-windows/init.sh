@@ -14,7 +14,7 @@ sudo add-apt-repository -y ppa:kisak/kisak-mesa
 sudo apt update
 sudo apt install -y xvfb libnvidia-egl-wayland1 mesa-utils libgl1-mesa-dri
 # From myself
-sudo apt install -y lld aria2c libc++-dev-wasm32 libclang-rt-dev-wasm32 libclang-rt-dev-wasm64
+sudo apt install -y lld libc++-dev-wasm32 libclang-rt-dev-wasm32 libclang-rt-dev-wasm64
 
 echo "Cloning Zen Browser repository..."
 if [ -d "zen-browser" ]; then
@@ -65,7 +65,6 @@ sudo mv libclang_rt.builtins-wasm32.a /usr/lib/llvm-18/lib/clang/18/lib/wasi/
 
 echo "Initializing repository..."
 npm install
-npm run bootstrap
 npm run init
 
 echo "Setting up Windows dependencies..."
