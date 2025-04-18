@@ -9,6 +9,7 @@ WIP, doesn't work yet but we aim to build for Windows first (cause Zen is eating
 This script is only tested in Google's Firebase Studio instance.
 
 ```
+sudo apt update
 chmod +x ./ubuntu-windows.sh
 ./ubuntu-windows.sh
 ```

@@ -24,6 +24,7 @@ echo "Cloning Zen Browser repository..."
 if [ -d "zen-browser" ]; then
     echo "Zen Browser repository already exists, updating..."
     cd zen-browser/desktop/
+    git reset --hard
     git pull
 else
     mkdir zen-browser/
