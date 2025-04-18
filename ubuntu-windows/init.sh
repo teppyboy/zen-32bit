@@ -85,8 +85,6 @@ echo "Installing language packs..."
 sh scripts/download-language-packs.sh
 
 # Copying our config
-echo "Patching mozconfigs..."
-cp -f ../../desktop/configs/windows/mozconfig ./configs/windows/mozconfig
 echo "" >> ./configs/common/mozconfig
 echo "export MOZ_WINDOWS_RS_DIR=$(pwd)/windows-0.58.0" >> ./configs/common/mozconfig
 export PATH="/usr/lib/llvm-18/bin/:$PATH"

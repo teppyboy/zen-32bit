@@ -11,6 +11,7 @@ This script is only tested in Google's Firebase Studio instance.
 ```
 sudo apt update
 ./ubuntu-windows/init.sh
+./ubuntu-windows/patch.sh
 ./ubuntu-windows/build.sh
 ```
 

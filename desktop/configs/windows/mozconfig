@@ -117,7 +117,7 @@ export CPPFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
 export CXXFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
 export LDFLAGS="-Wl,-O3 -march=core2,--import-memory,--no-check-features"
 export RUSTFLAGS="-Clink-args=--icf=safe -C target-cpu=core2 -C codegen-units=1"
-export POLLY="-mllvm -polly -mllvm -polly-2nd-level-tiling -mllvm -polly-loopfusion-greedy -mllvm -polly-pattern-matching-based-opts -mllvm -polly-position=before-vectorizer -mllvm -polly-vectorizer=stripmine"
+# export POLLY="-mllvm -polly -mllvm -polly-2nd-level-tiling -mllvm -polly-loopfusion-greedy -mllvm -polly-pattern-matching-based-opts -mllvm -polly-position=before-vectorizer -mllvm -polly-vectorizer=stripmine"
 export VERBOSE=1
 
 if test "$ZEN_CROSS_COMPILING"; then
