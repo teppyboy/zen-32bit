@@ -50,9 +50,7 @@ cargo binstall -y cargo-download --locked
 cargo binstall -y cbindgen --locked
 cargo binstall -y sccache --locked
 cargo binstall -y cargo-download --locked
-cd engine/
 cargo download -x windows=0.58.0
-cd ..
 export CARGO_INCREMENTAL=0
 
 echo "Installing x86 build tools..."
