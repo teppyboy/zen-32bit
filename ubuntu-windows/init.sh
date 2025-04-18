@@ -26,7 +26,7 @@ else
     git clone https://github.com/zen-browser/desktop/ zen-browser/desktop --recursive --depth 1
     cd zen-browser/desktop/
 fi
-mkdir engine/
+mkdir -p engine/
 
 echo "Installing NodeJS..."
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
@@ -50,9 +50,8 @@ cargo download -x windows=0.58.0
 cd ..
 export CARGO_INCREMENTAL=0
 
-echo "Initializing repository..."
+echo "Installing repository dependencies..."
 npm install
-npm run init
 
 echo "Installing x86 build tools..."
 sudo dpkg --add-architecture i386
@@ -80,7 +79,11 @@ echo "Setting up MSVC..."
 ./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2022.yaml ~/win-cross/vs2022
 cd ..
 
-python3 ./scripts/update_en_US_packs.py
+# Initialize the repository
+echo "Initializing repository..."
+npm run init
+sh scripts/download-language-packs.sh
+
 # Copying our config
 echo "Patching mozconfigs..."
 cp -f ../../desktop/configs/windows/mozconfig ./configs/windows/mozconfig
