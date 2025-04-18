@@ -26,7 +26,6 @@ else
     git clone https://github.com/zen-browser/desktop/ zen-browser/desktop --recursive --depth 1
     cd zen-browser/desktop/
 fi
-mkdir -p engine/
 
 echo "Installing NodeJS..."
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
@@ -35,6 +34,12 @@ nvm install 23
 node -v
 nvm current
 npm -v
+
+echo "Initializing repository..."
+npm install
+# Initialize the repository
+npm run init
+mkdir -p engine/
 
 echo "Installing Rust and Rust applications..."
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -49,9 +54,6 @@ cd engine/
 cargo download -x windows=0.58.0
 cd ..
 export CARGO_INCREMENTAL=0
-
-echo "Installing repository dependencies..."
-npm install
 
 echo "Installing x86 build tools..."
 sudo dpkg --add-architecture i386
@@ -79,9 +81,7 @@ echo "Setting up MSVC..."
 ./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2022.yaml ~/win-cross/vs2022
 cd ..
 
-# Initialize the repository
-echo "Initializing repository..."
-npm run init
+echo "Installing language packs..."
 sh scripts/download-language-packs.sh
 
 # Copying our config
