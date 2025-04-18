@@ -4,11 +4,7 @@
 set +x
 echo "This script will cross-compile Zen Browser for Windows 32-bit on Ubuntu."
 
-echo "Setting environment variables..."
-export SURFER_PLATFORM="win32"
-export ZEN_CROSS_COMPILING=1
-export ZEN_RELEASE_BRANCH="release"
-export ZEN_RELEASE=1
+source ../ubuntu-windows/env.sh
 
 echo "Installing dependencies..."
 # Copied from Zen
@@ -101,9 +97,6 @@ git config --global user.name "nobody"
 git add -A
 git commit -a -m "fuck Firefox"
 cd ..
-echo "Building Zen Browser..."
-echo "If this fails then you may try 'npm run build -- --verbose' to see more output."
-npm run build
 
 # Packaging
 npm run package

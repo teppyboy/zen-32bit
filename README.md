@@ -10,8 +10,8 @@ This script is only tested in Google's Firebase Studio instance.
 
 ```
 sudo apt update
-chmod +x ./ubuntu-windows.sh
-./ubuntu-windows.sh
+./ubuntu-windows/init.sh
+./ubuntu-windows/build.sh
 ```
 
 And now :pray: that it works.
