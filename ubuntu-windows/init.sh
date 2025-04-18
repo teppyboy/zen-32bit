@@ -63,10 +63,6 @@ wget https://github.com/jedisct1/libclang_rt.builtins-wasm32.a/raw/refs/heads/ma
 sudo mkdir -p /usr/lib/llvm-18/lib/clang/18/lib/wasi/
 sudo mv libclang_rt.builtins-wasm32.a /usr/lib/llvm-18/lib/clang/18/lib/wasi/
 
-echo "Initializing repository..."
-npm install
-npm run init
-
 echo "Setting up Windows dependencies..."
 mkdir -p ~/win-cross
 cd engine/
@@ -80,6 +76,10 @@ rm wine.tar.zst
 echo "Setting up MSVC..."
 ./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2022.yaml ~/win-cross/vs2022
 cd ..
+
+echo "Initializing repository..."
+npm install
+npm run init
 
 python3 ./scripts/update_en_US_packs.py
 # Copying our config
@@ -96,5 +96,5 @@ git add -A
 git commit -a -m "fuck Firefox"
 cd ..
 
-# Packaging
-npm run package
+
+echo "Initialization complete! You may now build the browser."
