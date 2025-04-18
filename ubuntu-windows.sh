@@ -70,6 +70,7 @@ echo "Initializing repository..."
 npm install
 npm run bootstrap
 npm run init
+npm run surfer -- ci --brand twilight
 
 echo "Setting up Windows dependencies..."
 mkdir -p ~/win-cross
@@ -102,3 +103,6 @@ cd ..
 echo "Building Zen Browser..."
 echo "If this fails then you may try 'npm run build -- --verbose' to see more output."
 npm run build
+
+# Packaging
+npm run package
