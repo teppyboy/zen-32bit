@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 
-# Fuck Zen building script for being super verbose.
-set +x
+set -e
 echo "This script will cross-compile Zen Browser for Windows 32-bit on Ubuntu."
 
 source ./ubuntu-windows/env.sh
 
 echo "Installing dependencies..."
 # Copied from Zen
-sudo apt install -y python3 python3-pip dos2unix yasm nasm build-essential libgtk2.0-dev libpython3-dev m4 uuid libasound2-dev libcurl4-openssl-dev libdbus-1-dev libdrm-dev libdbus-glib-1-dev libgtk-3-dev libpulse-dev libx11-xcb-dev libxt-dev xvfb lld llvm --fix-missing
+sudo apt install -y python3 python3-launchpadlib python3-pip dos2unix yasm nasm build-essential libgtk2.0-dev libpython3-dev m4 uuid libasound2-dev libcurl4-openssl-dev libdbus-1-dev libdrm-dev libdbus-glib-1-dev libgtk-3-dev libpulse-dev libx11-xcb-dev libxt-dev xvfb lld llvm --fix-missing
 # From Zen (.github/workflows/src/release-build.sh)
 sudo add-apt-repository -y ppa:kisak/kisak-mesa
 sudo apt update
@@ -51,6 +50,10 @@ cargo download -x windows=0.58.0
 cd ..
 export CARGO_INCREMENTAL=0
 
+echo "Initializing repository..."
+npm install
+npm run init
+
 echo "Installing x86 build tools..."
 sudo dpkg --add-architecture i386
 sudo apt update 
@@ -76,10 +79,6 @@ rm wine.tar.zst
 echo "Setting up MSVC..."
 ./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2022.yaml ~/win-cross/vs2022
 cd ..
-
-echo "Initializing repository..."
-npm install
-npm run init
 
 python3 ./scripts/update_en_US_packs.py
 # Copying our config
