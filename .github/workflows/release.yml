@@ -4,14 +4,10 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Run at midnight UTC every day
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g. v1.0.0)'
-        required: true
-      release_notes:
-        description: 'Release notes'
-        required: false
-        default: 'New release'
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
   release:
