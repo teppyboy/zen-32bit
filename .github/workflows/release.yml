@@ -1,0 +1,72 @@
+name: Create File Release
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run at midnight UTC every day
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+      release_notes:
+        description: 'Release notes'
+        required: false
+        default: 'New release'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build 
+        run: |
+          sudo apt update
+          ./ubuntu-windows/init.sh
+          ./ubuntu-windows/patch.sh
+          ./ubuntu-windows/build.sh
+          echo "FILE_NAME=$(cat ./zen-browser/desktop/dist/package_name.txt)" >> $GITHUB_ENV
+          echo "RELEASE_FILE=$(realpath ./zen-browser/desktop/dist/$FILE_NAME.zip)" >> $GITHUB_ENV
+          cd ./zen-browser/desktop/ 
+          echo "ZEN_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      
+      - name: Generate Release Notes
+        run: |
+          cat > release_notes.md << 'EOL'
+          > [!WARNING]
+          > These builds have Sandbox disabled, use at your own risk.
+
+          # Experimental build
+          + Windows only, because I mostly have RAM issues on Windows.
+
+          # What's changed?
+          + Updated to Zen Browser commit [${{ env.ZEN_COMMIT }}](https://github.com/zen-browser/desktop/commit/${{ env.ZEN_COMMIT }})
+          EOL
+          
+          echo "NOTES<<EOF" >> $GITHUB_ENV
+          cat release_notes.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: zen-${{ env.ZEN_COMMIT }}-win32
+          release_name: zen-${{ env.ZEN_COMMIT }}-win32
+          body: ${{ env.NOTES }}
+          draft: false
+          prerelease: false
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.RELEASE_FILE }}
+          asset_name: ${{ env.FILE_NAME }}
+          asset_content_type: application/octet-stream
