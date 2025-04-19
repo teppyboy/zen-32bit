@@ -14,16 +14,24 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build 
+      - name: Initialize dependencies and repository
         run: |
           sudo apt update
           wget http://nz2.archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
           sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
           ./ubuntu-windows/init.sh
           ./ubuntu-windows/patch.sh
+
+      - name: Build
+        run: |
           ./ubuntu-windows/build.sh
           echo "FILE_NAME=$(cat ./zen-browser/desktop/dist/package_name.txt)" >> $GITHUB_ENV
           echo "RELEASE_FILE=$(realpath ./zen-browser/desktop/dist/$FILE_NAME.zip)" >> $GITHUB_ENV
