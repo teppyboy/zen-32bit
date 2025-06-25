@@ -7,7 +7,7 @@ source ./ubuntu-windows/env.sh
 
 echo "Installing dependencies..."
 # Copied from Zen
-sudo apt install -y python3 python3-launchpadlib python3-pip dos2unix yasm nasm build-essential libgtk2.0-dev libpython3-dev m4 uuid libasound2-dev libcurl4-openssl-dev libdbus-1-dev libdrm-dev libdbus-glib-1-dev libgtk-3-dev libpulse-dev libx11-xcb-dev libxt-dev xvfb lld llvm --fix-missing
+sudo apt install -y python3 python3-launchpadlib python3-pip dos2unix yasm nasm upx-ucl build-essential libgtk2.0-dev libpython3-dev m4 uuid libasound2-dev libcurl4-openssl-dev libdbus-1-dev libdrm-dev libdbus-glib-1-dev libgtk-3-dev libpulse-dev libx11-xcb-dev libxt-dev xvfb lld llvm --fix-missing
 # From Zen (.github/workflows/src/release-build.sh)
 sudo add-apt-repository -y ppa:kisak/kisak-mesa
 sudo apt update
