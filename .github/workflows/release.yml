@@ -27,7 +27,6 @@ jobs:
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@main
-        if: ${{ inputs.use-sccache }}
         with:
           disable_annotations: true
 
