@@ -3,9 +3,10 @@
 set -e
 echo "This script will cross-compile Zen Browser for Windows 32-bit on Ubuntu."
 
+cwd=$(realpath .)
 source ./ubuntu-windows/env.sh
 
-bash ./ubuntu-windows/init/system.sh
+bash $cwd/ubuntu-windows/init/system.sh
 
 echo "Cloning Zen Browser repository..."
 if [ -d "zen-browser" ]; then
@@ -26,9 +27,9 @@ npm install
 npm run init
 mkdir -p engine/
 
-bash ./ubuntu-windows/init/rust.sh
-bash ./ubuntu-windows/init/x86.sh
-bash ./ubuntu-windows/init/windows.sh
+bash $cwd/ubuntu-windows/init/rust.sh
+bash $cwd/ubuntu-windows/init/x86.sh
+bash $cwd/ubuntu-windows/init/windows.sh
 
 echo "Installing language packs..."
 sh scripts/download-language-packs.sh
