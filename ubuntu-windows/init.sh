@@ -20,7 +20,7 @@ else
     cd zen-browser/desktop/
 fi
 
-bash ./ubuntu-windows/init/nodejs.sh
+bash $cwd/ubuntu-windows/init/nodejs.sh
 
 echo "Initializing repository..."
 npm install
