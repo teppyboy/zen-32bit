@@ -1,15 +1,24 @@
 # Zen on 32-bit platform
 
-WIP, doesn't work yet but we aim to build for Windows first (cause Zen is eating too much ram here)
+> [!WARNING]
+> This is an unofficial project that has no relation to the official Zen Browser, please do not ask them about this as they will provide no support whatsoever.
+
+Automated build everyday powered by GitHub Actions.
+> I aim to cache things to it'll build faster but I don't know how to use it in GitHub Actions for now.
+
+## Status
+
++ Windows: It works!
+
+## Installation
+
+Just go to [releases](https://github.com/teppyboy/zen-32bit/releases), grab the latest version, download the ZIP or EXE and use it normally.
 
 ## Building
 
-### Ubuntu
-
-This script is only tested in Google's Firebase Studio instance.
+### Windows (using Ubuntu)
 
 ```
-sudo apt update
 ./ubuntu-windows/init.sh
 ./ubuntu-windows/patch.sh
 ./ubuntu-windows/build.sh
