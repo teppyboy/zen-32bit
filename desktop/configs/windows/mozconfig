@@ -40,7 +40,7 @@ ac_add_options --disable-debug-js-modules
 ac_add_options --disable-tests
 ac_add_options --enable-strip
 ac_add_options --enable-install-strip
-ac_add_options --enable-clang-plugin
+ac_add_options --disable-clang-plugin
 ac_add_options --enable-lto
 ac_add_options --enable-jemalloc
 ac_add_options --enable-wasm-avx
@@ -52,6 +52,7 @@ export MOZILLA_OFFICIAL=1
 mk_add_options MOZ_OPTIMIZE=1
 MOZ_OPTIMIZE=1
 export MOZ_OPTIMIZE=1
+unset ENABLE_CLANG_PLUGIN
 export STRIP_FLAGS="--strip-debug --strip-unneeded"
 # Ours
 ac_add_options --enable-optimize="/O2 /clang:-O3 -march=x86-64-v3 -fno-exceptions -fwasm-exceptions -m32 -O3 -w -ftree-vectorize -mfpmath=sse -mprfchw -msse3 -mcx16 -msahf"
