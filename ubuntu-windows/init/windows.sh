@@ -10,6 +10,12 @@ echo "Seting up Mozilla Wine..."
 aria2c "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.cache.level-1.toolchains.v3.linux64-wine.latest/artifacts/public%2Fbuild%2Fwine.tar.zst" -o wine.tar.zst
 tar --zstd -xf wine.tar.zst -C ~/win-cross
 rm wine.tar.zst
+# wtf, why do i have to workaround shit that ain't by myself.
+if [ ! -x ~/win-cross/wine/bin/wine64 ]; then
+    echo "Workaround wine64 binary..."
+    ln -sf ~/win-cross/wine/bin/wine ~/win-cross/wine/bin/wine64
+    chmod +x ~/win-cross/wine/bin/wine64
+fi
 echo "Setting up MSVC..."
 ./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2022.yaml ~/win-cross/vs2022
 cd ..
