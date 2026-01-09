@@ -9,5 +9,5 @@ cargo binstall -y cargo-download --locked
 cargo binstall -y cbindgen --locked
 cargo binstall -y sccache --locked
 cargo binstall -y cargo-download --locked
-cargo download -x windows=0.58.0
+cargo download -x windows=0.62.2
 export CARGO_INCREMENTAL=0
