@@ -44,7 +44,7 @@ jobs:
         uses: useblacksmith/cache@v5
         with:
           path: ${HOME}/win-cross
-          key: win-cross
+          key: win-cross-vs2026
 
       - name: Initialize dependencies and repository
         run: |

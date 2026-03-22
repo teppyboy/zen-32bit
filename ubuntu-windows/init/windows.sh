@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 echo "Setting up Windows dependencies..."
 mkdir -p ~/win-cross
 cd engine/
@@ -17,5 +19,5 @@ if [ ! -x ~/win-cross/wine/bin/wine64 ]; then
     chmod +x ~/win-cross/wine/bin/wine64
 fi
 echo "Setting up MSVC..."
-./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2022.yaml ~/win-cross/vs2022
+./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2026.yaml ~/win-cross/vs2026
 cd ..

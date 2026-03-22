@@ -2,7 +2,7 @@
 # Note that they're adjusted for 32-bit platforms
 if test "$ZEN_CROSS_COMPILING"; then
 
-  export WINSYSROOT="$(echo ~)/win-cross/vs2022"
+  export WINSYSROOT="$(echo ~)/win-cross/vs2026"
 
   export WINE="$(echo ~)/win-cross/wine/bin/wine64"
   export WINEARCH=win32
@@ -14,7 +14,7 @@ if test "$ZEN_CROSS_COMPILING"; then
   export CROSS_BUILD=1
   CROSS_COMPILE=1
 
-  export WIN32_REDIST_DIR="$(echo ~)/win-cross/vs2022/VC/Redist/MSVC/14.38.33135/x86/Microsoft.VC143.CRT"
+  export WIN32_REDIST_DIR="$(echo ~)/win-cross/vs2026/VC/Redist/MSVC/14.38.33135/x86/Microsoft.VC143.CRT"
 fi
 
 #? https://bugzilla.mozilla.org/show_bug.cgi?id=1617793
