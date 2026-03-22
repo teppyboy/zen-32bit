@@ -41,7 +41,6 @@ ac_add_options --disable-tests
 ac_add_options --enable-strip
 ac_add_options --enable-install-strip
 ac_add_options --disable-clang-plugin
-ac_add_options --enable-lto
 ac_add_options --enable-jemalloc
 ac_add_options --enable-wasm-avx
 ac_add_options --enable-rust-simd
@@ -55,7 +54,7 @@ export MOZ_OPTIMIZE=1
 unset ENABLE_CLANG_PLUGIN
 export STRIP_FLAGS="--strip-debug --strip-unneeded"
 # Ours
-ac_add_options --enable-optimize="/O2 /clang:-O3 -march=x86-64-v3 -fno-exceptions -fwasm-exceptions -m32 -O3 -w -ftree-vectorize -mfpmath=sse -mprfchw -msse3 -mcx16 -msahf"
+ac_add_options --enable-optimize="/O2 /clang:-O3 -m32 -march=core2 -msse3 -mssse3 -msse4.1 -mfpmath=sse -O3 -w -ftree-vectorize -mcx16 -msahf -mprfchw"
 
 # Dangerous thing (disable sandbox)
 ac_add_options --disable-sandbox
@@ -101,18 +100,29 @@ ac_add_options OPT_LEVEL="3"
 export RUSTC_OPT_LEVEL="3"
 ac_add_options RUSTC_OPT_LEVEL="3"
 
-# Enable PGO/LTO
-export MOZ_LTO=1
-ac_add_options MOZ_LTO=1
-#export MOZ_PGO=1
-#ac_add_options MOZ_PGO=1
+# Cross-language LTO (Rust + C/C++) — skipped during Stage 1 (profile generation) to cut build time
+if test -z "$ZEN_GA_GENERATE_PROFILE"; then
+  export MOZ_LTO=cross
+fi
 
 export CFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
 export CPPFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
 export CXXFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
-export LDFLAGS="-Wl,-O3 -march=core2,--import-memory,--no-check-features"
-export RUSTFLAGS="-Clink-args=--icf=safe -C target-cpu=core2 -C codegen-units=1"
-# export POLLY="-mllvm -polly -mllvm -polly-2nd-level-tiling -mllvm -polly-loopfusion-greedy -mllvm -polly-pattern-matching-based-opts -mllvm -polly-position=before-vectorizer -mllvm -polly-vectorizer=stripmine"
+export LDFLAGS="-Wl,-O3"
+
+# -Clinker-plugin-lto enables cross-language LTO bitcode between Rust and C/C++
+# Only during the final PGO build, not during instrumented profile-gen builds
+if test -z "$ZEN_GA_GENERATE_PROFILE"; then
+  export RUSTFLAGS="-Clink-args=--icf=safe -C target-cpu=core2 -C codegen-units=1 -Clinker-plugin-lto"
+else
+  export RUSTFLAGS="-Clink-args=--icf=safe -C target-cpu=core2 -C codegen-units=1"
+fi
+
+# Polly polyhedral loop optimizer — conservative flags (no vectorizer to avoid regressions)
+export POLLY="-mllvm -polly -mllvm -polly-loopfusion-greedy -mllvm -polly-pattern-matching-based-opts -mllvm -polly-position=before-vectorizer"
+export CFLAGS="$CFLAGS $POLLY"
+export CXXFLAGS="$CXXFLAGS $POLLY"
+
 export VERBOSE=1
 
 if test "$ZEN_CROSS_COMPILING"; then

@@ -10,11 +10,172 @@ on:
     branches: [ "master" ]
 
 jobs:
-  release:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 1 (Ubuntu): Check profile cache. On cache miss, build the instrumented
+  # binary (Stage 1 PGO) and upload it for the Windows collection job.
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-profiles:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+    outputs:
+      week: ${{ steps.date.outputs.week }}
+      profiles-cached: ${{ steps.pgo-cache.outputs.cache-hit }}
+
+    steps:
+      - name: Get current week number
+        id: date
+        run: echo "week=$(date +%Y%V)" >> $GITHUB_OUTPUT
+
+      - name: Restore PGO profile cache
+        id: pgo-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/artifact
+          key: pgo-profiles-${{ steps.date.outputs.week }}
+
+      # Everything below only runs when the weekly profile cache is cold
+
+      - name: Free disk space (Ubuntu)
+        if: steps.pgo-cache.outputs.cache-hit != 'true'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+
+      - name: Checkout code
+        if: steps.pgo-cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+
+      - name: Run sccache-cache
+        if: steps.pgo-cache.outputs.cache-hit != 'true'
+        uses: mozilla-actions/sccache-action@main
+        with:
+          disable_annotations: true
+
+      - name: Expose actions cache variables
+        if: steps.pgo-cache.outputs.cache-hit != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env['ACTIONS_CACHE_URL'])
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN'])
+
+      - name: win-cross Cache
+        if: steps.pgo-cache.outputs.cache-hit != 'true'
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 5
+        id: cache-win-cross
+        uses: useblacksmith/cache@v5
+        with:
+          path: ${HOME}/win-cross
+          key: win-cross-vs2026
+
+      - name: Initialize dependencies and repository
+        if: steps.pgo-cache.outputs.cache-hit != 'true'
+        run: |
+          ./ubuntu-windows/init.sh
+          ./ubuntu-windows/patch.sh
+
+      - name: Build instrumented binary (Stage 1 PGO)
+        if: steps.pgo-cache.outputs.cache-hit != 'true'
+        run: ./ubuntu-windows/build-instrumented.sh
+
+      - name: Upload instrumented binary
+        if: steps.pgo-cache.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: zen-stage1
+          path: zen-browser/desktop/dist/*.zip
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 2 (Windows): Run profileserver.py against the instrumented binary to
+  # collect .profraw data, merge it into merged.profdata, and generate en-US.log.
+  # Only runs when the profile cache was cold (new week).
+  # ─────────────────────────────────────────────────────────────────────────────
+  collect-profiles:
+    needs: build-profiles
+    if: needs.build-profiles.outputs.profiles-cached != 'true'
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download instrumented binary
+        uses: actions/download-artifact@v4
+        with:
+          name: zen-stage1
+          path: C:\stage1
+
+      - name: Extract instrumented binary
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem "C:\stage1\*.zip" | Select-Object -First 1
+          Write-Host "Extracting $($zip.FullName)"
+          Expand-Archive -Path $zip.FullName -DestinationPath "C:\artifact"
+          Write-Host "Extracted contents:"
+          Get-ChildItem "C:\artifact" -Recurse | Select-Object FullName
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+
+      - name: Clone Zen Browser desktop (for mach + profileserver.py)
+        shell: pwsh
+        run: |
+          git clone https://github.com/zen-browser/desktop zen-browser\desktop --depth 1 --recursive
+          cd zen-browser\desktop
+          npm install
+          npm run init
+
+      - name: Bootstrap Mozilla build tools (provides llvm-profdata.exe)
+        shell: cmd
+        working-directory: zen-browser\desktop\engine
+        run: mach --no-interactive bootstrap --application-choice browser
+
+      - name: Collect PGO profiles via profileserver.py
+        shell: pwsh
+        working-directory: zen-browser\desktop\engine
+        run: |
+          # Find the browser executable (zen.exe / twilight.exe / firefox.exe)
+          $exe = Get-ChildItem "C:\artifact" -Recurse -Include "*.exe" |
+                 Where-Object { $_.Length -gt 1MB -and $_.Name -match "zen|twilight|firefox" } |
+                 Select-Object -First 1
+          if (-not $exe) {
+            Write-Error "Could not find browser executable in C:\artifact"
+            exit 1
+          }
+          Write-Host "Using binary: $($exe.FullName)"
+
+          $llvmProfdata = "$env:USERPROFILE\.mozbuild\clang\bin\llvm-profdata.exe"
+          $env:LLVM_PROFDATA = $llvmProfdata
+          $env:JARLOG_FILE   = "en-US.log"
+
+          .\mach python build/pgo/profileserver.py --binary $exe.FullName
+
+      - name: Upload PGO profiles
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgo-profiles
+          path: |
+            zen-browser/desktop/engine/merged.profdata
+            zen-browser/desktop/engine/en-US.log
+          retention-days: 5
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 3 (Ubuntu): Final PGO-optimized build + GitHub release.
+  # Pulls profiles from cache (weekly hit) or from the collect-profiles artifact
+  # (fresh generation), then builds the optimized browser and publishes it.
+  # ─────────────────────────────────────────────────────────────────────────────
+  release:
+    needs: [build-profiles, collect-profiles]
+    if: always() && needs.build-profiles.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - name: Free disk space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -22,8 +183,7 @@ jobs:
           tool-cache: false
 
       - name: Checkout code
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@main
@@ -31,7 +191,7 @@ jobs:
           disable_annotations: true
 
       - name: Expose actions cache variables
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL', process.env['ACTIONS_CACHE_URL'])
@@ -46,19 +206,40 @@ jobs:
           path: ${HOME}/win-cross
           key: win-cross-vs2026
 
+      - name: Restore PGO profile cache
+        id: pgo-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/artifact
+          key: pgo-profiles-${{ needs.build-profiles.outputs.week }}
+
+      - name: Download PGO profiles artifact (if cache missed)
+        if: steps.pgo-cache.outputs.cache-hit != 'true' && needs.collect-profiles.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: pgo-profiles
+          path: ~/artifact
+
+      - name: Save PGO profiles to weekly cache
+        if: steps.pgo-cache.outputs.cache-hit != 'true' && needs.collect-profiles.result == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/artifact
+          key: pgo-profiles-${{ needs.build-profiles.outputs.week }}
+
       - name: Initialize dependencies and repository
         run: |
           ./ubuntu-windows/init.sh
           ./ubuntu-windows/patch.sh
 
-      - name: Build
+      - name: Build with PGO
         run: |
           ./ubuntu-windows/build.sh
           echo "FILE_NAME=$(cat ./zen-browser/desktop/dist/package_name.txt)" >> $GITHUB_ENV
           echo "RELEASE_FILE=$(realpath ./zen-browser/desktop/dist/$FILE_NAME.zip)" >> $GITHUB_ENV
-          cd ./zen-browser/desktop/ 
+          cd ./zen-browser/desktop/
           echo "ZEN_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-      
+
       - name: Generate release notes
         run: |
           cat > release_notes.md << 'EOL'
@@ -71,11 +252,11 @@ jobs:
           # What's changed?
           + Updated to Zen Browser commit [${{ env.ZEN_COMMIT }}](https://github.com/zen-browser/desktop/commit/${{ env.ZEN_COMMIT }})
           EOL
-          
+
           echo "NOTES<<EOF" >> $GITHUB_ENV
           cat release_notes.md >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-        
+
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -87,7 +268,7 @@ jobs:
           body: ${{ env.NOTES }}
           draft: false
           prerelease: false
-      
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
