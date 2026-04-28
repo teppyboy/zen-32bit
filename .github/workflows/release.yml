@@ -130,6 +130,16 @@ jobs:
           npm install
           npm run init
 
+      - name: Install MozillaBuild
+        shell: pwsh
+        run: |
+          $url = "https://github.com/mozilla/mozilla-build/releases/download/v4.0.2/mozilla-build-4.0.2.msi"
+          $msi = "$env:TEMP\mozilla-build.msi"
+          Invoke-WebRequest -Uri $url -OutFile $msi
+          Start-Process msiexec.exe -Wait -ArgumentList "/i $msi /quiet /qn /norestart ADDLOCAL=ALL"
+          Write-Host "MozillaBuild installed at C:\mozilla-build"
+          Get-ChildItem "C:\mozilla-build" | Select-Object Name
+
       - name: Bootstrap Mozilla build tools (provides llvm-profdata.exe)
         shell: cmd
         working-directory: zen-browser\desktop\engine

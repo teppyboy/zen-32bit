@@ -43,8 +43,13 @@ if test "$ZEN_CROSS_COMPILING"; then
     mk_add_options "export MOZ_AUTOMATION_PACKAGE_GENERATED_SOURCES=0"
     ac_add_options --enable-profile-generate=cross
   elif test -z "$ZEN_GA_DISABLE_PGO"; then
-    ac_add_options --enable-profile-use=cross
-    ac_add_options --with-pgo-profile-path=$(echo ~)/artifact/merged.profdata
-    ac_add_options --with-pgo-jarlog=$(echo ~)/artifact/en-US.log
+    pgo_profdata=$(echo ~)/artifact/merged.profdata
+    if test -f "$pgo_profdata"; then
+      ac_add_options --enable-profile-use=cross
+      ac_add_options --with-pgo-profile-path="$pgo_profdata"
+      ac_add_options --with-pgo-jarlog=$(echo ~)/artifact/en-US.log
+    else
+      echo "WARNING: PGO profile not found at $pgo_profdata, building without PGO."
+    fi
   fi
 fi
