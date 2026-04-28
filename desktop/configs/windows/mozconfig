@@ -14,7 +14,12 @@ if test "$ZEN_CROSS_COMPILING"; then
   export CROSS_BUILD=1
   CROSS_COMPILE=1
 
-  export WIN32_REDIST_DIR="$(echo ~)/win-cross/vs2026/VC/Redist/MSVC/14.38.33135/x86/Microsoft.VC143.CRT"
+  WIN32_REDIST_DIR="$(ls -d "$WINSYSROOT"/VC/Redist/MSVC/*/x86/Microsoft.VC*.CRT 2>/dev/null | sort -V | tail -n1)"
+  if test -z "$WIN32_REDIST_DIR" -o ! -d "$WIN32_REDIST_DIR"; then
+    echo "ERROR: Could not resolve WIN32_REDIST_DIR under $WINSYSROOT/VC/Redist/MSVC" 1>&2
+    exit 1
+  fi
+  export WIN32_REDIST_DIR
 fi
 
 #? https://bugzilla.mozilla.org/show_bug.cgi?id=1617793

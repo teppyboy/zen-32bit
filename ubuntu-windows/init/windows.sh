@@ -20,4 +20,22 @@ if [ ! -x ~/win-cross/wine/bin/wine64 ]; then
 fi
 echo "Setting up MSVC..."
 ./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2026.yaml ~/win-cross/vs2026
+
+echo "Validating installed MSVC redist/toolset paths..."
+redist_root=~/win-cross/vs2026/VC/Redist/MSVC
+tools_root=~/win-cross/vs2026/VC/Tools/MSVC
+
+echo "Detected MSVC tool versions:"
+ls -1 "$tools_root" || true
+
+echo "Detected MSVC redist versions:"
+ls -1 "$redist_root" || true
+
+latest_redist_dir=$(ls -d "$redist_root"/*/x86/Microsoft.VC*.CRT 2>/dev/null | sort -V | tail -n1)
+if [ -z "$latest_redist_dir" ] || [ ! -d "$latest_redist_dir" ]; then
+    echo "ERROR: Could not find x86 MSVC CRT redist directory under $redist_root" 1>&2
+    exit 1
+fi
+
+echo "Using Win32 redist directory: $latest_redist_dir"
 cd ..
