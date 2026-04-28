@@ -1,10 +1,11 @@
-# Additional flags provided by https://github.com/Alex313031/Mercury/blob/main/mozconfigs/mozconfig-win-avx2-cross 
-# Note that they're adjusted for 32-bit platforms
-if test "$ZEN_CROSS_COMPILING"; then
+# Downstream Windows 32-bit cross-build overrides for Zen Browser.
+# Keep this file small: upstream configs/common/mozconfig owns release,
+# optimization, telemetry, debug, test, package, and signing defaults.
 
+if test "$ZEN_CROSS_COMPILING"; then
   export WINSYSROOT="$(echo ~)/win-cross/vs2026"
 
-  export WINE="$(echo ~)/win-cross/wine/bin/wine64"
+  export WINE="$(echo ~)/win-cross/wine/bin/wine"
   export WINEARCH=win32
   export WINEDEBUG=-all
 
@@ -22,127 +23,28 @@ if test "$ZEN_CROSS_COMPILING"; then
   export WIN32_REDIST_DIR
 fi
 
-#? https://bugzilla.mozilla.org/show_bug.cgi?id=1617793
-#? https://phabricator.services.mozilla.com/D170170
-ac_add_options --disable-maintenance-service
-ac_add_options --disable-bits-download
-
-# Build Zen only
+# Build Zen only.
 ac_add_options --enable-application=browser
 ac_add_options --disable-artifact-builds
 
-# 32-bit build
+# 32-bit Windows target.
 ac_add_options --target=i686-pc-windows-msvc
-ac_add_options --enable-eme=widevine,wmfcdm
 
-# Optimizations
-# From Mercury browser
-# Optimization settings
-ac_add_options --enable-release
-ac_add_options --disable-debug
-ac_add_options --disable-debug-symbols
-ac_add_options --disable-debug-js-modules
-ac_add_options --disable-tests
-ac_add_options --enable-strip
-ac_add_options --enable-install-strip
-ac_add_options --disable-clang-plugin
-ac_add_options --enable-jemalloc
-ac_add_options --enable-wasm-avx
-ac_add_options --enable-rust-simd
-ac_add_options --enable-hardening
-mk_add_options MOZILLA_OFFICIAL=1
-MOZILLA_OFFICIAL=1
-export MOZILLA_OFFICIAL=1
-mk_add_options MOZ_OPTIMIZE=1
-MOZ_OPTIMIZE=1
-export MOZ_OPTIMIZE=1
-unset ENABLE_CLANG_PLUGIN
-export STRIP_FLAGS="--strip-debug --strip-unneeded"
-# Ours
-ac_add_options --enable-optimize="/O2 /clang:-O3 -m32 -march=core2 -msse3 -mssse3 -msse4.1 -mfpmath=sse -O3 -w -ftree-vectorize -mcx16 -msahf -mprfchw"
-
-# Dangerous thing (disable sandbox)
-ac_add_options --disable-sandbox
-
-# Media settings
-ac_add_options --enable-raw
-ac_add_options --enable-webrtc
+# Keep only options still present in upstream Zen configs or required by i686.
 ac_add_options --enable-jxl
-ac_add_options --enable-av1
-ac_add_options --enable-eme=widevine
-
-# Add-ons
-ac_add_options --allow-addon-sideload
 ac_add_options --with-unsigned-addon-scopes=app,system
-
-# Client settings
-ac_add_options --disable-parental-controls
-ac_add_options --disable-crashreporter
-ac_add_options --disable-updater
-ac_add_options --enable-geckodriver
-ac_add_options --disable-maintenance-service
+ac_add_options --disable-sandbox
 ac_add_options --without-wasm-sandboxed-libraries
+ac_add_options --disable-maintenance-service
 ac_add_options --disable-bits-download
-#ac_add_options --disable-default-browser-agent
-export MOZ_SOURCE_CHANGESET=${changeset}
-mk_add_options MOZ_CRASHREPORTER=0
-mk_add_options MOZ_DATA_REPORTING=0
-mk_add_options MOZ_SERVICES_HEALTHREPORT=0
-mk_add_options MOZ_TELEMETRY_REPORTING=
-export MOZ_CRASHREPORTER=0
-export MOZ_DATA_REPORTING=0
-export MOZ_REQUIRE_SIGNING=
-export MOZ_TELEMETRY_REPORTING=
-export MOZ_PACKAGE_JSSHELL=1
-
-# Autoclobber
-mk_add_options AUTOCLOBBER=1
-export AUTOCLOBBER=1
-
-# Set -Copt-level=3
-export OPT_LEVEL="3"
-ac_add_options OPT_LEVEL="3"
-export RUSTC_OPT_LEVEL="3"
-ac_add_options RUSTC_OPT_LEVEL="3"
-
-# Cross-language LTO (Rust + C/C++) — skipped during Stage 1 (profile generation) to cut build time
-if test -z "$ZEN_GA_GENERATE_PROFILE"; then
-  export MOZ_LTO=cross
-fi
-
-export CFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
-export CPPFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
-export CXXFLAGS="-m32 -march=core2 /clang:-O3 /clang:-ffp-contract=fast"
-export LDFLAGS="-Wl,-O3"
-
-# -Clinker-plugin-lto enables cross-language LTO bitcode between Rust and C/C++
-# Only during the final PGO build, not during instrumented profile-gen builds
-if test -z "$ZEN_GA_GENERATE_PROFILE"; then
-  export RUSTFLAGS="-Clink-args=--icf=safe -C target-cpu=core2 -C codegen-units=1 -Clinker-plugin-lto"
-else
-  export RUSTFLAGS="-Clink-args=--icf=safe -C target-cpu=core2 -C codegen-units=1"
-fi
-
-# Polly polyhedral loop optimizer — conservative flags (no vectorizer to avoid regressions)
-export POLLY="-mllvm -polly -mllvm -polly-loopfusion-greedy -mllvm -polly-pattern-matching-based-opts -mllvm -polly-position=before-vectorizer"
-export CFLAGS="$CFLAGS $POLLY"
-export CXXFLAGS="$CXXFLAGS $POLLY"
-
-export VERBOSE=1
 
 if test "$ZEN_CROSS_COMPILING"; then
   if test "$ZEN_GA_GENERATE_PROFILE"; then
-    export CXXFLAGS="$CXXFLAGS -fprofile-generate -mllvm -enable-name-compression=false -mllvm -pgo-temporal-instrumentation -fprofile-update=atomic"
     mk_add_options "export MOZ_AUTOMATION_PACKAGE_GENERATED_SOURCES=0"
     ac_add_options --enable-profile-generate=cross
-  elif test "$SURFER_COMPAT" = "x86_64"; then
-    # Dont use PGO on aarch64 builds and the ZEN_GA_DISABLE_PGO flag is not set
-    if test "$ZEN_GA_DISABLE_PGO"; then
-      export ZEN_DUMMY=1
-    else
-      ac_add_options --enable-profile-use=cross
-      ac_add_options --with-pgo-profile-path=$(echo ~)/artifact/merged.profdata
-      ac_add_options --with-pgo-jarlog=$(echo ~)/artifact/en-US.log
-    fi
+  elif test -z "$ZEN_GA_DISABLE_PGO"; then
+    ac_add_options --enable-profile-use=cross
+    ac_add_options --with-pgo-profile-path=$(echo ~)/artifact/merged.profdata
+    ac_add_options --with-pgo-jarlog=$(echo ~)/artifact/en-US.log
   fi
 fi

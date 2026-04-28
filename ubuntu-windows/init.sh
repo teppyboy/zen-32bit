@@ -23,7 +23,11 @@ fi
 bash $cwd/ubuntu-windows/init/nodejs.sh
 
 echo "Initializing repository..."
-npm install
+if [ -f package-lock.json ]; then
+    npm ci
+else
+    npm install
+fi
 npm run init
 mkdir -p engine/
 
@@ -35,8 +39,9 @@ echo "Installing language packs..."
 sh scripts/download-language-packs.sh
 
 # Copying our config
+WINDOWS_RS_VERSION=$(cat build/windows/.windows-rs-version)
 echo "" >> ./configs/common/mozconfig
-echo "export MOZ_WINDOWS_RS_DIR=$(pwd)/windows-0.62.2" >> ./configs/common/mozconfig
+echo "export MOZ_WINDOWS_RS_DIR=$(pwd)/windows-$WINDOWS_RS_VERSION" >> ./configs/common/mozconfig
 export PATH="/usr/lib/llvm-18/bin/:$PATH"
 echo "Creating a commit to bypass the commit check..."
 cd ./engine/

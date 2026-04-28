@@ -73,12 +73,12 @@ jobs:
       - name: Initialize dependencies and repository
         if: steps.pgo-cache.outputs.cache-hit != 'true'
         run: |
-          ./ubuntu-windows/init.sh
-          ./ubuntu-windows/patch.sh
+          bash ./ubuntu-windows/init.sh
+          bash ./ubuntu-windows/patch.sh
 
       - name: Build instrumented binary (Stage 1 PGO)
         if: steps.pgo-cache.outputs.cache-hit != 'true'
-        run: ./ubuntu-windows/build-instrumented.sh
+        run: bash ./ubuntu-windows/build-instrumented.sh
 
       - name: Upload instrumented binary
         if: steps.pgo-cache.outputs.cache-hit != 'true'
@@ -229,12 +229,12 @@ jobs:
 
       - name: Initialize dependencies and repository
         run: |
-          ./ubuntu-windows/init.sh
-          ./ubuntu-windows/patch.sh
+          bash ./ubuntu-windows/init.sh
+          bash ./ubuntu-windows/patch.sh
 
       - name: Build with PGO
         run: |
-          ./ubuntu-windows/build.sh
+          bash ./ubuntu-windows/build.sh
           echo "FILE_NAME=$(cat ./zen-browser/desktop/dist/package_name.txt)" >> $GITHUB_ENV
           echo "RELEASE_FILE=$(realpath ./zen-browser/desktop/dist/$FILE_NAME.zip)" >> $GITHUB_ENV
           cd ./zen-browser/desktop/
